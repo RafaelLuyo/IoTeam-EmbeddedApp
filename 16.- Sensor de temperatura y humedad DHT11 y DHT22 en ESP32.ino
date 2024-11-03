@@ -42,7 +42,40 @@ void loop() {
     lcd.print("Temp: " + String(data.temperature, 2) + "C");
     lcd.setCursor(0, 1);
     lcd.print("Humedad: " + String(data.humidity, 1) + "%");
+    if (WiFi.status() == WL_CONNECTED) {
+        HTTPClient httpClient;
+        httpClient.begin(ENDPOINT_URL);
+        httpClient.addHeader("Content-Type", "application/json");
 
+        // Preparar el JSON con el valor de humedad
+        String jsonPayload = "{\"moisture\": " + String((int)data.humidity) + "}";
+
+        int httpResponseCode = httpClient.PUT(jsonPayload);
+
+        if (httpResponseCode > 0) {
+            Serial.println("Código de respuesta HTTP: " + String(httpResponseCode));
+            String response = httpClient.getString();
+            Serial.println("Respuesta: " + response);
+        } else {
+            Serial.println("Error en la solicitud PUT: " + String(httpResponseCode));
+            // Manejo de redirecciones
+            if (httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY ||
+                httpResponseCode == HTTP_CODE_FOUND) {
+                String newUrl = httpClient.header("Location");
+                Serial.println("Redirigido a: " + newUrl);
+                // Hacer la solicitud a la nueva URL
+                httpClient.end(); // Cierra la conexión actual
+                httpClient.begin(newUrl);
+                httpClient.addHeader("Content-Type", "application/json");
+                httpResponseCode = httpClient.PUT(jsonPayload);
+                Serial.println("Código de respuesta HTTP: " + String(httpResponseCode));
+                }
+        }
+
+        httpClient.end();
+    } else {
+        Serial.println("WiFi Desconectado");
+    }
 
     delay(10000); // Esperar diez segundos antes de la siguiente lectura
 }
