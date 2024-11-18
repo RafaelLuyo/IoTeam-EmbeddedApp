@@ -3,16 +3,23 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include <ESP32Servo.h>
 
 #define WIFI_SSID "Wokwi-GUEST"
 #define WIFI_PASSWORD ""
-#define NODE_ID 1
+#define NODE_ID 8
 #define ENDPOINT_URL "https://thirstyseedapi-production.up.railway.app/api/v1/node/" + String(NODE_ID) + "/moisture"
 
-// Inicializamos los pines conectados de la pantalla de cristal líquido al ESP32
+
+#define PIN_SERVO 2
+
+
 LiquidCrystal lcd(22, 23, 5, 18, 19, 21);
 DHTesp dht;
 int pinDHT = 15;
+
+
+Servo servo;
 
 void setup() {
     Serial.begin(115200);
@@ -31,6 +38,8 @@ void setup() {
     lcd.print("Iniciando...");
     delay(2000);
     lcd.clear();
+
+    servo.attach(PIN_SERVO, 500, 2500);
 }
 
 void loop() {
@@ -42,12 +51,31 @@ void loop() {
     lcd.print("Temp: " + String(data.temperature, 2) + "C");
     lcd.setCursor(0, 1);
     lcd.print("Humedad: " + String(data.humidity, 1) + "%");
+
+
+    if (data.humidity > 30) {
+
+        for (int pos = 0; pos <= 180; pos++) {
+            servo.write(pos);
+            delay(15);
+        }
+        delay(1000);
+
+        for (int pos = 180; pos >= 0; pos--) {
+            servo.write(pos);
+            delay(15);
+        }
+    } else {
+
+        Serial.println("Humedad baja, no movemos el servo.");
+    }
+
     if (WiFi.status() == WL_CONNECTED) {
         HTTPClient httpClient;
         httpClient.begin(ENDPOINT_URL);
         httpClient.addHeader("Content-Type", "application/json");
 
-        // Preparar el JSON con el valor de humedad
+
         String jsonPayload = "{\"moisture\": " + String((int)data.humidity) + "}";
 
         int httpResponseCode = httpClient.PUT(jsonPayload);
@@ -58,18 +86,6 @@ void loop() {
             Serial.println("Respuesta: " + response);
         } else {
             Serial.println("Error en la solicitud PUT: " + String(httpResponseCode));
-            // Manejo de redirecciones
-            if (httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY ||
-                httpResponseCode == HTTP_CODE_FOUND) {
-                String newUrl = httpClient.header("Location");
-                Serial.println("Redirigido a: " + newUrl);
-                // Hacer la solicitud a la nueva URL
-                httpClient.end(); // Cierra la conexión actual
-                httpClient.begin(newUrl);
-                httpClient.addHeader("Content-Type", "application/json");
-                httpResponseCode = httpClient.PUT(jsonPayload);
-                Serial.println("Código de respuesta HTTP: " + String(httpResponseCode));
-                }
         }
 
         httpClient.end();
@@ -77,5 +93,5 @@ void loop() {
         Serial.println("WiFi Desconectado");
     }
 
-    delay(10000); // Esperar diez segundos antes de la siguiente lectura
+    delay(10000);
 }
