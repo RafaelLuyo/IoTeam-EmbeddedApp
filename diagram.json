@@ -8,12 +8,13 @@
     {
       "type": "wokwi-dht22",
       "id": "dht1",
-      "top": 134.7,
-      "left": -504.6,
-      "attrs": { "temperature": "-16.1", "humidity": "45.5" }
+      "top": 144.3,
+      "left": -543,
+      "attrs": { "temperature": "15", "humidity": "46.5" }
     },
     { "type": "wokwi-lcd1602", "id": "lcd1", "top": -342.17, "left": -320, "attrs": {} },
-    { "type": "wokwi-potentiometer", "id": "pot1", "top": -289.3, "left": -0.2, "attrs": {} }
+    { "type": "wokwi-potentiometer", "id": "pot1", "top": -289.3, "left": -0.2, "attrs": {} },
+    { "type": "wokwi-servo", "id": "servo1", "top": 180.4, "left": 0, "attrs": {} }
   ],
   "connections": [
     [ "esp:TX0", "$serialMonitor:RX", "", [] ],
@@ -46,7 +47,10 @@
     [ "lcd1:VDD", "bb1:tp.1", "red", [ "v0" ] ],
     [ "lcd1:RW", "bb1:tn.4", "black", [ "v0" ] ],
     [ "esp:3V3", "bb1:bp.1", "red", [ "v0", "h38.1", "v-9.6" ] ],
-    [ "dht1:VCC", "bb1:bp.3", "red", [ "v19.2", "h57.6", "v-9.6" ] ]
+    [ "dht1:VCC", "bb1:bp.3", "red", [ "v19.2", "h57.6", "v-9.6" ] ],
+    [ "servo1:GND", "esp:GND.2", "black", [ "h0" ] ],
+    [ "servo1:V+", "esp:VIN", "red", [ "v0" ] ],
+    [ "servo1:PWM", "esp:D2", "blue", [ "v0" ] ]
   ],
   "dependencies": {}
 }
